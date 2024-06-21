@@ -1,0 +1,24 @@
+# backend/Dockerfile.dev
+FROM continuumio/miniconda3
+
+RUN conda install -y -c conda-forge \
+    python-dotenv \
+    onnxruntime \
+    fastapi \
+    uvicorn \
+    python-multipart \
+    pandas \
+    sqlalchemy \
+    psycopg2-binary \
+    boto3  \
+    scikit-learn
+
+WORKDIR /app
+
+COPY ../models /models
+COPY ../app /app 
+COPY .env /app/.env 
+
+ENV RUNNING_IN_DOCKER=True
+
+CMD ["./uvicorn.sh"]

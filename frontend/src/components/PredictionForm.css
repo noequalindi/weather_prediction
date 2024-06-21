@@ -1,0 +1,128 @@
+@keyframes backgroundGradient {
+    0% {
+      background-color: #246e90; /* Light sky blue */
+    }
+    50% {
+      background-color: #feb83ed4; /* Steel blue */
+    }
+    100% {
+      background-color: #211666; /* Dark slate gray */
+    }
+  }
+
+  .prediction-container {
+    border-radius: 30px;
+    animation: backgroundGradient 5s infinite alternate;
+    max-width: 360px; /* Ajusta el ancho máximo según tus necesidades */
+    width: 350px;
+    margin: 20px auto; /* Centrar el contenedor */
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .prediction-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    width: 100%;
+  }
+  
+  .form-grid label {
+    display: flex;
+    flex-direction: column;
+    font-weight: bold;
+    font-size: 20px;
+    color: #333;
+  }
+  
+  .form-grid .MuiTextField-root {
+    width: 100%;
+  }
+  
+  .radio-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    padding: 10px;
+  }
+  
+  .radio-container legend {
+    color: #000;
+    font-weight: bold;
+    font-size: 17px;
+  }
+  
+  .radio-container .MuiFormGroup-root {
+    display: flex;
+  }
+  
+  .radio-container .MuiFormControlLabel-root {
+    margin-right: 15px;
+  }
+  
+  .submit-button, .MuiButtonBase, .MuiButton, .MuiButtonBase-root-MuiButton-root {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #3464ad;
+    color: white;
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+  }
+  
+  .submit-button:hover,
+  .clear-button:hover {
+    background-color: #11146e;
+  }
+  
+  .error-message {
+    color: rgb(170, 14, 14);
+    font-size: 14px;
+    margin-top: 10px;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .clear-button {
+    background: transparent;
+    background-color: transparent;
+    font-size: 14px;
+    margin: 0;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .clear-button:hover {
+    text-decoration: underline;
+    background-color: transparent;
+    color: #ccc;
+  }
+  
+  @media (max-width: 600px) {
+    .prediction-container {
+        width: 300px;
+        padding: 12px;
+    }
+    .form-grid label {
+        font-size: 16px;
+    }
+  }

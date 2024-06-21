@@ -1,0 +1,5 @@
+# backend/app/requirements.txt
+fastapi==0.68.1
+uvicorn==0.15.0
+psycopg2
+boto3

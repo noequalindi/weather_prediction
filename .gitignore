@@ -1,0 +1,11 @@
+weather-prediction-keys.json
+/__pycache__/
+logs
+airflow/dags/__pycache__/
+airflow/dags/logs
+backend/app/__pycache__
+minio_storage/
+*.pkl
+*.onnx
+node_modules/
+.DS_Store

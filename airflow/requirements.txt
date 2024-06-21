@@ -1,0 +1,10 @@
+mlflow[extras]~=2.10
+boto3~=1.34
+pandas
+scikit-learn
+sqlalchemy
+psycopg2-binary
+joblib
+skl2onnx
+s3fs
+
