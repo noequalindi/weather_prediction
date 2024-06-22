@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, Date, TIMESTAMP
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.sql import func
 import logging
 import pandas as pd
@@ -14,17 +14,18 @@ datasets_path = '/opt/airflow/datasets/'
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2024, 6, 20),
+    'start_date': datetime(2024, 6, 21),
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5)
 }
 
 dag = DAG(
     'create_and_load_tables_postgres',
     default_args=default_args,
     description='Create tables and load data in PostgreSQL',
-    schedule_interval=None,  # Para ejecutarlo manualmente
+    schedule_interval=timedelta(hours=3),
 )
 
 def initialize_db():

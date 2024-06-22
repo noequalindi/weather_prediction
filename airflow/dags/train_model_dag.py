@@ -1,6 +1,5 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
-from datetime import datetime
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from skl2onnx import convert_sklearn
@@ -17,6 +16,8 @@ from airflow.hooks.base_hook import BaseHook
 from io import BytesIO
 import boto3
 import os
+from datetime import datetime, timedelta
+from airflow.sensors.external_task import ExternalTaskSensor
 
 
 MINIO_CONN_ID = 'minio_connection'
@@ -31,7 +32,6 @@ y_test_path = 'datasets/y_test.csv'
 
 DATASETS_DIR = '/opt/airflow/datasets'
 
-       
 s3_client = boto3.client(
     's3',
     endpoint_url="http://s3:9000",
@@ -170,16 +170,15 @@ def train_random_forest():
         logging.error(f"Error en el entrenamiento del modelo Random Forest: {e}")
         raise AirflowException(f"Error en el entrenamiento del modelo Random Forest: {e}")
 
-
-
 # Definir el DAG
 dag = DAG(
     'train_random_forest_to_minio',
-    schedule_interval=None,
-    start_date=datetime(2024, 6, 20),
+    schedule_interval=timedelta(hours=3),  # Ejecutar cada 3 horas
+    start_date=datetime(2024, 6, 22),  # Iniciar inmediatamente al iniciar la app
     description='Entrenar modelo Random Forest y guardar en MinIO',
     catchup=False
 )
+
 
 # Definir los operadores
 upload_csv_task = PythonOperator(
@@ -194,5 +193,12 @@ train_rf_task = PythonOperator(
     dag=dag,
 )
 
-# Definir dependencias
-upload_csv_task >> train_rf_task
+wait_for_initialize_db = ExternalTaskSensor(
+    task_id='wait_for_initialize_db',
+    external_dag_id='create_and_load_tables_postgres',
+    external_task_id=None,  # Espera cualquier tarea completada en el DAG 1
+    mode='reschedule',  # Reschedule para seguir verificando la tarea del DAG 1
+    timeout=timedelta(hours=2),  # Tiempo máximo de espera
+)
+
+wait_for_initialize_db >> upload_csv_task >> train_rf_task

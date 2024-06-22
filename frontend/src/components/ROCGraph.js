@@ -1,6 +1,6 @@
 import React from 'react';
 import { Line } from 'react-chartjs-2';
-import { Card, CardContent, Typography } from '@mui/material';
+import { Card, CardContent, Box } from '@mui/material';
 
 const ROCGraph = ({ metricsData }) => {
   const { fpr, tpr, roc_auc: rocAuc } = metricsData;
@@ -42,6 +42,8 @@ const ROCGraph = ({ metricsData }) => {
         },
       },
       y: {
+        min: 0,
+        max: 1,
         title: {
           display: true,
           text: 'True Positive Rate',
@@ -53,11 +55,10 @@ const ROCGraph = ({ metricsData }) => {
   return (
     <Card sx={{ borderRadius: 2, backgroundColor: 'white', p: 2, color: 'black' }}>
       <CardContent>
-
          <h3> ROC Curve</h3>
-         <div style={{ height: '320px' }}>
+         <Box sx={{ height: '320px', alignContent: 'center', display: 'flex', justifyContent: 'center' }}>
           <Line data={data} options={options} />
-        </div>
+        </Box>
       </CardContent>
     </Card>
   );

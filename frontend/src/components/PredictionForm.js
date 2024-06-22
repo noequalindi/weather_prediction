@@ -101,12 +101,21 @@ const PredictionForm = () => {
       });
       setPrediction(response.data.prediction);
       setError(false); // Reiniciar el estado de error si la solicitud fue exitosa
-      setPrediction(response.data.prediction);
     } catch (error) {
       console.error("There was an error making the request:", error);
+      if (error.response) {
+        // El servidor devolvió un código de estado diferente de 2xx
+        setErrorMessage(error.response.data.detail);
+      } else if (error.request) {
+        // La solicitud fue hecha pero no se recibió respuesta
+        setErrorMessage("No se recibió respuesta del servidor.");
+      } else {
+        // Ocurrió un error antes de realizar la solicitud
+        setErrorMessage(error.message);
+      }
       setError(true); // Establecer estado de error en true si ocurre un error
     } finally {
-      setTimeout(() => setLoading(false), 2000); // Loader se muestra durante 2 segundos
+      setTimeout(() => setLoading(false), 2000); // Detener el loader después de 2 segundos
     }
   };
 
@@ -117,6 +126,7 @@ const PredictionForm = () => {
         <div className="form-grid">
           <label className="input-label">
             Temperatura Mínima:
+            <span className='description'>en grados centígrados</span>
             <TextField
               type="text"
               name="MinTemp"
@@ -143,6 +153,7 @@ const PredictionForm = () => {
           </label>
           <label className="input-label">
             Velocidad del viento:
+            <span className='description'>en km/h</span>
             <TextField
               type="text"
               name="WindSpeed9am"
@@ -215,8 +226,9 @@ const PredictionForm = () => {
           disableElevation
           fullWidth
           className="submit-button"
+          sx={{ fontSize: "1.2rem", fontFamily: 'Poppins', marginTop: '1rem', borderRadius: '50px' }}
         >
-          Predict
+         Predict 
         </Button>
       </form>
       <Button
@@ -226,11 +238,18 @@ const PredictionForm = () => {
         fullWidth
         className="clear-button"
         onClick={handleClearFields}
+        sx={{ fontSize: "1rem", fontFamily: 'Poppins', marginTop: '1rem', borderRadius: '50px' }}
       >
         Limpiar Campos
       </Button>
-      {loading && <CircularProgress color="primary" className="loader" />}
-      { !loading && prediction && <PredictionResult prediction={prediction} error={error} /> }
+      {error ? (
+        <div className="error-message">
+          <h3>Ocurrió un error al hacer la predicción.</h3>
+        </div>
+      ) : ( 
+      loading ? <CircularProgress color="primary" className="loader" /> :
+      !loading && prediction && <PredictionResult prediction={prediction} error={error} />
+    )}
     </div>
   );
 };

@@ -11,7 +11,8 @@ RUN conda install -y -c conda-forge \
     sqlalchemy \
     psycopg2-binary \
     boto3  \
-    scikit-learn
+    scikit-learn \
+    requests
 
 WORKDIR /app
 

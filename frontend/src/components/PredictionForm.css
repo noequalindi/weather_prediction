@@ -1,9 +1,9 @@
 @keyframes backgroundGradient {
     0% {
-      background-color: #246e90; /* Light sky blue */
+      background-color: #65ccfb; /* Light sky blue */
     }
     50% {
-      background-color: #feb83ed4; /* Steel blue */
+      background-color: #a10f0fd4; /* Steel blue */
     }
     100% {
       background-color: #211666; /* Dark slate gray */
@@ -97,6 +97,7 @@
     font-size: 14px;
     margin-top: 10px;
     width: 100%;
+    text-shadow: #fff 1px 1px 1px;
     text-align: center;
   }
   
@@ -125,4 +126,9 @@
     .form-grid label {
         font-size: 16px;
     }
+  }
+
+  .description {
+    font-size: 13px;
+    margin: 2px;
   }
