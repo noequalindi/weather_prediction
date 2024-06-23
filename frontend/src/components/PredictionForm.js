@@ -247,7 +247,7 @@ const PredictionForm = () => {
           <h3>Ocurrió un error al hacer la predicción.</h3>
         </div>
       ) : ( 
-      loading ? <CircularProgress color="primary" className="loader" /> :
+      loading ? <CircularProgress color="inherit" className="loader" /> :
       !loading && prediction && <PredictionResult prediction={prediction} error={error} />
     )}
     </div>

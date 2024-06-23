@@ -9,14 +9,19 @@ const ROCGraph = ({ metricsData }) => {
   const parsedFpr = JSON.parse(fpr);
   const parsedTpr = JSON.parse(tpr);
 
+  // Asegurarse de que los datos estén ordenados por fpr
+  const sortedData = parsedFpr.map((fprValue, index) => ({
+    fpr: fprValue,
+    tpr: parsedTpr[index],
+  })).sort((a, b) => a.fpr - b.fpr);
+
   const data = {
-    labels: parsedFpr,  // Usar fpr como labels si ya es un array válido
     datasets: [
       {
-        label: `ROC Curve (AUC = ${rocAuc.toFixed(2)})`,
-        data: parsedTpr.map((tprValue, index) => ({ x: parsedFpr[index], y: tprValue })),
+        label: `ROC curve (area = ${rocAuc.toFixed(4)})`,
+        data: sortedData.map(d => ({ x: d.fpr, y: d.tpr })),
         fill: false,
-        borderColor: 'rgba(75,192,192,1)',
+        borderColor: 'rgba(75,192,192,1)', // Mantener color original
         tension: 0.4,
         cubicInterpolationMode: 'default',
       },
@@ -24,7 +29,7 @@ const ROCGraph = ({ metricsData }) => {
         label: 'Random Classifier (AUC = 0.5)',
         data: [{ x: 0, y: 0 }, { x: 1, y: 1 }],
         fill: false,
-        borderColor: 'rgba(255, 99, 132, 1)',
+        borderColor: 'rgba(255, 99, 132, 1)', // Mantener color original
         borderDash: [5, 5],
         tension: 0,
       },
@@ -32,13 +37,33 @@ const ROCGraph = ({ metricsData }) => {
   };
 
   const options = {
+    plugins: {
+      legend: {
+        labels: {
+          font: {
+            size: 16, // Tamaño de la fuente para las etiquetas de la leyenda
+          },
+        },
+      },
+    },
     scales: {
       x: {
+        type: 'linear',
+        position: 'bottom',
         min: 0,
         max: 1,
         title: {
           display: true,
-          text: 'False Positive Rate',
+          text: 'Tasa de Falsos Positivos',
+          font: {
+            size: 18, // Tamaño de la fuente para el título del eje x
+          },
+        },
+        ticks: {
+          stepSize: 0.1, // Incremento de 0.1 en el eje x
+          font: {
+            size: 14, // Tamaño de la fuente para las etiquetas del eje x
+          },
         },
       },
       y: {
@@ -46,7 +71,16 @@ const ROCGraph = ({ metricsData }) => {
         max: 1,
         title: {
           display: true,
-          text: 'True Positive Rate',
+          text: 'Tasa de Verdaderos Positivos',
+          font: {
+            size: 18, // Tamaño de la fuente para el título del eje y
+          },
+        },
+        ticks: {
+          stepSize: 0.1, // Incremento de 0.1 en el eje y
+          font: {
+            size: 14, // Tamaño de la fuente para las etiquetas del eje y
+          },
         },
       },
     },
@@ -55,8 +89,8 @@ const ROCGraph = ({ metricsData }) => {
   return (
     <Card sx={{ borderRadius: 2, backgroundColor: 'white', p: 2, color: 'black' }}>
       <CardContent>
-         <h3> ROC Curve</h3>
-         <Box sx={{ height: '320px', alignContent: 'center', display: 'flex', justifyContent: 'center' }}>
+        <h3 style={{ fontSize: '1.6rem' }}>Curvas ROC</h3> {/* Tamaño de la fuente para el título */}
+        <Box sx={{ height: '320px', alignContent: 'center', display: 'flex', justifyContent: 'center' }}>
           <Line data={data} options={options} />
         </Box>
       </CardContent>

@@ -11,7 +11,6 @@ const MetricsTable = ({ metrics }) => {
   const [seasonMostRain, setSeasonMostRain] = useState(null);
   const [yearMostRain, setYearMostRain] = useState(null);
 
-  // Estados para almacenar los períodos desde y hasta
   const [trainingsByDatePeriod, setTrainingsByDatePeriod] = useState(null);
   const [averageRainfallLast5YearsPeriod, setAverageRainfallLast5YearsPeriod] = useState(null);
   const [cityMostRainPeriod, setCityMostRainPeriod] = useState(null);
@@ -20,6 +19,13 @@ const MetricsTable = ({ metrics }) => {
   const [totalRainfall, setTotalRainfall] = useState(0);
 
   const calculatePercentage = (value, total) => (total > 0 ? (value / total) * 100 : 0).toFixed(2);
+
+  const calculatePercentageMetrics = (value, total) => {
+    const decimalFormatted = value.toFixed(4); 
+    const percentage = (value / total * 100).toFixed(0); 
+    return `${decimalFormatted} - ${percentage}%`;
+  };
+
   const fontStyle = {fontSize: '1rem', fontFamily: 'Poppins'}
   useEffect(() => {
     const fetchTrainingsByDate = async () => {
@@ -93,7 +99,6 @@ const MetricsTable = ({ metrics }) => {
       }
     };
 
-    // Llamar a todas las funciones de obtención de datos al montar el componente
     fetchTrainingsByDate();
     fetchAverageRainfallLast5Years();
     fetchCityMostRain();
@@ -106,43 +111,42 @@ const MetricsTable = ({ metrics }) => {
     <Box>
       <h2>Otras Métricas</h2>
 
-      {/* Métricas del último entrenamiento del modelo Random Forest */}
-      <TableContainer component={Paper} sx={{ backgroundColor: 'white', borderRadius: 2, marginBottom: 2, fontFamily: 'Poppins', fontSize: '1.2rem' }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell colSpan={3} align="center" sx={fontStyle}><h3>Métricas del último entrenamiento del modelo Random Forest</h3></TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={fontStyle}>Métrica</TableCell>
-              <TableCell sx={fontStyle}>Train</TableCell>
-              <TableCell sx={fontStyle}>Test</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={fontStyle}>Accuracy</TableCell>
-              <TableCell sx={fontStyle}>{metrics.accuracy_train}</TableCell>
-              <TableCell sx={fontStyle}>{metrics.accuracy_test}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={fontStyle}>F1 Score</TableCell>
-              <TableCell sx={fontStyle}>{metrics.f1_score}</TableCell>
-              <TableCell sx={fontStyle}></TableCell> {/* Ajustar para mantener 3 celdas */}
-            </TableRow>
-            <TableRow>
-              <TableCell sx={fontStyle}>ROC AUC</TableCell>
-              <TableCell colSpan={2} sx={fontStyle}>{metrics.roc_auc}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
+    <TableContainer component={Paper} sx={{ backgroundColor: 'white', borderRadius: 2, marginBottom: 2, fontFamily: 'Poppins', fontSize: '1.2rem' }}>
+    <h3>Métricas del último entrenamiento del modelo Random Forest</h3>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell sx={fontStyle}>Métrica</TableCell>
+            <TableCell sx={fontStyle}>Train</TableCell>
+            <TableCell sx={fontStyle}>Test</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableCell sx={fontStyle}>Accuracy</TableCell>
+            <TableCell sx={fontStyle}>{calculatePercentageMetrics(metrics.accuracy_train, 1)}</TableCell>
+            <TableCell sx={fontStyle}>{calculatePercentageMetrics(metrics.accuracy_test, 1)}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell sx={fontStyle}>F1 Score</TableCell>
+            <TableCell sx={fontStyle}>{calculatePercentageMetrics(metrics.f1_score, 1)}</TableCell> {/* Ajustar para mantener 3 celdas */}
+            <TableCell sx={fontStyle}></TableCell> {/* Ajustar para mantener 3 celdas */}
+          </TableRow>
+          <TableRow>
+            <TableCell sx={fontStyle}>ROC AUC</TableCell>
+            <TableCell colSpan={2} sx={fontStyle}>{metrics.roc_auc.toFixed(4)}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </TableContainer>
 
       {/* Métricas de entrenamientos por fecha */}
       {trainingsByDate.length > 0 && (
         <Box mb={4}>
-          <h3>Entrenamientos por Fecha </h3>
+     
           <TableContainer component={Paper} sx={{ marginBottom: 2, borderRadius: '10px' }}>
+          <h4>Entrenamientos por Fecha </h4>
+
             <Table>
               <TableHead>
                 <TableRow>
@@ -157,10 +161,10 @@ const MetricsTable = ({ metrics }) => {
                 {trainingsByDate.map(training => (
                   <TableRow key={training.training_date}>
                     <TableCell sx={fontStyle}>{training.training_date}</TableCell>
-                    <TableCell sx={fontStyle}>{training.avg_accuracy_train}</TableCell>
-                    <TableCell sx={fontStyle}>{training.avg_accuracy_test}</TableCell>
-                    <TableCell sx={fontStyle}>{training.avg_f1_score}</TableCell>
-                    <TableCell sx={fontStyle}>{training.avg_roc_auc}</TableCell>
+                    <TableCell sx={fontStyle}>{calculatePercentageMetrics(training.avg_accuracy_train, 1)}</TableCell>
+                    <TableCell sx={fontStyle}>{calculatePercentageMetrics(training.avg_accuracy_test, 1)}</TableCell>
+                    <TableCell sx={fontStyle}>{calculatePercentageMetrics(training.avg_f1_score,1)}</TableCell>
+                    <TableCell sx={fontStyle}>{training.avg_roc_auc.toFixed(4)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -169,10 +173,12 @@ const MetricsTable = ({ metrics }) => {
         </Box>
       )}
       {/* Promedio de lluvia en los últimos 5 años */}
+    <Box mb={4}>
+      <h2> Más sobre el Dataset AUS_WEATHER </h2>
     {averageRainfallLast5Years.length > 0 && (
       <Box mb={4}>
         <h3>Promedio de Lluvia en los Últimos 5 Años ({averageRainfallLast5YearsPeriod})</h3>
-        <TableContainer component={Paper} sx={fontStyle}>
+        <TableContainer component={Paper} sx={{...fontStyle, borderRadius: 2 }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -197,7 +203,7 @@ const MetricsTable = ({ metrics }) => {
       {cityMostRain && (
         <Box mb={4}>
           <h3>Ciudad donde Más Llovió ({cityMostRainPeriod})</h3>
-          <Paper elevation={3} sx={{ p: 2 }}>
+          <Paper elevation={3} sx={{ p: 2, borderRadius: 2 }}>
             <Typography sx={fontStyle}><strong>Ciudad:</strong> {cityMostRain.location}</Typography>
             <Typography sx={fontStyle}><strong>Total de Lluvia (mm):</strong> {cityMostRain.total_rainfall.toFixed(2) / 100}</Typography>
           </Paper>
@@ -208,9 +214,9 @@ const MetricsTable = ({ metrics }) => {
       {seasonMostRain  && (
         <Box mb={4}>
           <h3>Estación del Año donde Más Llovió ({seasonMostRainPeriod})</h3>
-          <Paper elevation={3} sx={{ p: 2 }}>
+          <Paper elevation={3} sx={{ p: 2, borderRadius: 2 }}>
             <Typography sx={fontStyle}><strong>Estación:</strong> {seasonMostRain.season}</Typography>
-            <Typography sx={fontStyle}><strong>Total de Lluvia (mm):</strong> {seasonMostRain.total_rainfall.toFixed(2) / 100}</Typography>
+            <Typography sx={fontStyle}><strong>Total de Lluvia (mm):</strong> {seasonMostRain.total_rainfall.toFixed(2)}</Typography>
           </Paper>
         </Box>
       )}
@@ -219,14 +225,14 @@ const MetricsTable = ({ metrics }) => {
       {yearMostRain && (
         <Box mb={4}>
           <h3 >Año con Más Lluvia</h3>
-          <Paper elevation={3} sx={{ p: 2 }}>
+          <Paper elevation={3} sx={{ p: 2, borderRadius: 2 }}>
             <Typography sx={fontStyle}><strong>Año:</strong> {yearMostRain.year}</Typography>
-            <Typography sx={fontStyle}><strong>Total de Lluvia (mm):</strong> {yearMostRain.total_rainfall.toFixed(2) / 100}</Typography>
+            <Typography sx={fontStyle}><strong>Total de Lluvia (mm):</strong> {yearMostRain.total_rainfall.toFixed(4)}</Typography>
           </Paper>
         </Box>
       )}
-
     </Box>
+  </Box>
   );
 };
 

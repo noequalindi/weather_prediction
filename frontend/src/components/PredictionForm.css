@@ -3,7 +3,7 @@
       background-color: #65ccfb; /* Light sky blue */
     }
     50% {
-      background-color: #a10f0fd4; /* Steel blue */
+      background-color: #edb971d4; /* Steel blue */
     }
     100% {
       background-color: #211666; /* Dark slate gray */
@@ -93,11 +93,10 @@
   }
   
   .error-message {
-    color: rgb(170, 14, 14);
+    color: rgb(230, 155, 155);
     font-size: 14px;
     margin-top: 10px;
     width: 100%;
-    text-shadow: #fff 1px 1px 1px;
     text-align: center;
   }
   
