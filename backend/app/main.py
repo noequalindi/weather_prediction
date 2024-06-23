@@ -9,20 +9,54 @@ import pandas as pd
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, MetaData, Table, select, func, desc
+from sqlalchemy import create_engine, MetaData, Table, select, func, desc, inspect
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, NoSuchTableError
 from sqlalchemy.ext.declarative import declarative_base
 import boto3
-import botocore
+import botocore 
+from botocore.exceptions import ClientError
 from io import BytesIO
 import json
 import requests
 from requests.auth import HTTPBasicAuth
 
-
+running_in_docker = os.getenv('RUNNING_IN_DOCKER', 'False') == 'True'
 load_dotenv()
 app = FastAPI()
+
+# Set database connection URL
+if running_in_docker:
+    DATABASE_URL = 'postgresql+psycopg2://airflow:airflow@postgres:5432/airflow'
+else:
+    DATABASE_URL = 'postgresql+psycopg2://airflow:airflow@localhost:5432/airflow'
+
+print(f"DATABASE_URL is set to: {DATABASE_URL}")
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()
+metadata = MetaData()
+
+rf_metrics = Table(
+    'rf_metrics', metadata,
+    autoload_with=engine
+)
+
+weather_data = Table(
+    'weather_data', metadata,
+    autoload_with=engine
+)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        
 
 MINIO_BUCKET = 'weather-prediction-s3'
 MINIO_MODELS_PREFIX = 'models/'
@@ -35,9 +69,9 @@ s3_client = boto3.client(
     aws_secret_access_key='minioadmin',
     config=boto3.session.Config(signature_version='s3v4')
 )
+s3_bucket = "weather-prediction-s3"
 
 def load_onnx_model_from_minio(model_filename, dag_id):
-    s3_bucket = "weather-prediction-s3"
     s3_key = f"models/{model_filename}"
 
     try:
@@ -83,7 +117,6 @@ app.add_middleware(
 def read_root():
     return {"message": "Hello World"}
 
-running_in_docker = os.getenv('RUNNING_IN_DOCKER', 'False') == 'True'
 
 # Rutas de los modelos ONNX
 if running_in_docker:
@@ -136,101 +169,64 @@ async def predict(data: RainPrediction, model_type: str = "decision_tree"):
     return {"prediction": result}
 
 
-AIRFLOW_BASE_URL = "http://localhost:8080/api/v1"
 
-def check_airflow_dag_status(dag_id):
-    dag_status_endpoint = f"{AIRFLOW_BASE_URL}/dags/{dag_id}/dagRuns"
-
-    try:
-        response = requests.get(dag_status_endpoint, auth=HTTPBasicAuth('airflow', 'airflow'))
-        response.raise_for_status()  
-
-        dag_runs = response.json()['dag_runs']
-        if dag_runs:
-            latest_dag_run = dag_runs[0]
-            dag_state = latest_dag_run['state']
-            return dag_state == 'success' 
-        else:
-            return False  # No hay DAG runs encontrados
-    except requests.exceptions.RequestException as e:
-        print(f"Error al consultar estado del DAG {dag_id}: {e}")
-        return False
-
+dag_table = Table('dag', metadata, autoload_with=engine)
+dag_run_table = Table('dag_run', metadata, autoload_with=engine)
 
 @app.get("/check_dag_status/{dag_id}")
 async def check_dag_status(dag_id: str):
-    dag_status_endpoint = f"{AIRFLOW_BASE_URL}/dags/{dag_id}/dagRuns"
-
+    session = SessionLocal()
     try:
-        response = requests.get(dag_status_endpoint, auth=HTTPBasicAuth('airflow', 'airflow'))
-        response = requests.get(dag_status_endpoint)
+        # Verificar existencia de DAG
+        dag_query = select(dag_table).where(dag_table.c.dag_id == dag_id)
+        dag_result = session.execute(dag_query).first()
+        if not dag_result:
+            raise HTTPException(status_code=404, detail=f"DAG with id '{dag_id}' not found")
 
-        if response.status_code == 200:
-            dag_runs = response.json().get('dag_runs', [])
-            if dag_runs:
-                latest_dag_run = dag_runs[0]
-                dag_state = latest_dag_run['state']
-                return {"dag_id": dag_id, "status": dag_state}
+        # Verificar existencia de ejecuciones del DAG
+        dag_run_query = (
+            select(dag_run_table)
+            .where(dag_run_table.c.dag_id == dag_id)
+            .order_by(dag_run_table.c.execution_date.desc())
+            .limit(1)
+        )
+        dag_run_result = session.execute(dag_run_query).first()
+        if not dag_run_result:
+            raise HTTPException(status_code=404, detail=f"No runs found for DAG with id '{dag_id}'")
+
+        run = {
+            "run_id": dag_run_result.dag_run_id,
+            "state": dag_run_result.state,
+            "execution_date": dag_run_result.execution_date
+        }
+
+        # Verificar existencia de la tabla rf_metrics
+        inspector = inspect(session.get_bind())
+        if not inspector.has_table("rf_metrics"):
+            raise HTTPException(status_code=404, detail="Table 'rf_metrics' not found in the database.")
+
+        # Verificar existencia de la tabla weather_data
+        if not inspector.has_table("weather_data"):
+            raise HTTPException(status_code=404, detail="Table 'weather_data' not found in the database.")
+
+        # Verificar si el modelo está disponible en S3
+        model_filename = "best_random_forest_model.onnx"
+        s3_key = f"models/{model_filename}"
+        try:
+            s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
+        except ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                raise HTTPException(status_code=404, detail=f"Model '{model_filename}' is not available in S3 yet. DAG '{dag_id}' has not run or has not completed successfully.")
             else:
-                return {"dag_id": dag_id, "status": "No runs found"}
-        elif response.status_code == 403:
-            raise HTTPException(status_code=403, detail="Forbidden: Check Airflow permissions")
-        else:
-            raise HTTPException(status_code=response.status_code, detail=f"Failed to fetch DAG status: {response.text}")
+                raise
 
-    except requests.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Error connecting to Airflow API: {str(e)}")
+        return {"dag_id": dag_id, "last_run": run, "model_available": True}
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-    
+    finally:
+        session.close()
+
+   
 ######### OBTENER METRICAS ##########
-
-# Set database connection URL
-if running_in_docker:
-    DATABASE_URL = 'postgresql+psycopg2://airflow:airflow@postgres:5432/airflow'
-else:
-    DATABASE_URL = 'postgresql+psycopg2://airflow:airflow@localhost:5432/airflow'
-
-print(f"DATABASE_URL is set to: {DATABASE_URL}")
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
-
-# Definir la tabla rf_metrics
-metadata = MetaData()
-rf_metrics = Table(
-    'rf_metrics', metadata,
-    autoload_with=engine
-)
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# Definir la tabla rf_metrics
-rf_metrics = Table(
-    'rf_metrics', metadata,
-    autoload_with=engine
-)
-
-weather_data = Table(
-    'weather_data', metadata,
-    autoload_with=engine
-)
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 @app.get("/metrics")
 async def get_metrics(db: Session = Depends(get_db)):

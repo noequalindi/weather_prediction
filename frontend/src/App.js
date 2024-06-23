@@ -20,16 +20,18 @@ function App() {
       try {
         const response = await axios.get(`${API_URL}/check_dag_status/${DAG_ID}`);
         if (response.status === 200) {
-          if (response.data.last_run.state === 'success') {
+          const lastRun = response.data.last_run;
+          const modelAvailable = response.data.mode_available
+          if (lastRun && lastRun.state === 'success' && modelAvailable) {
             setDagLoaded(true);
             fetchMetrics();
           } else {
-            setTimeout(checkDagStatus, 5000); 
+            setTimeout(checkDagStatus, 5000);
           }
         }
       } catch (error) {
         if (error.response && error.response.status === 404) {
-          console.log('El modelo se está cargando, espere unos segundos...');
+          setLoadingMessage('El modelo se está cargando, espere unos segundos...');
         } else {
           console.error('Error checking DAG status:', error);
           setLoadingMessage("Error al verificar el estado del DAG.");
@@ -37,8 +39,8 @@ function App() {
         setTimeout(checkDagStatus, 5000); // Volver a intentar después de 5 segundos para cualquier error
       }
     };
+  
     
-    // Llama a la función por primera vez
     checkDagStatus();
     
 
@@ -54,7 +56,7 @@ function App() {
     };
 
     checkDagStatus();
-  }, []);
+  }, [DAG_ID]);
 
   return (
     <div className="App poppins-semibold">
