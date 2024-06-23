@@ -7,4 +7,6 @@ psycopg2-binary
 joblib
 skl2onnx
 s3fs
-
+onnxruntime
+onnx
+onnxruntime-tools

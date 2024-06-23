@@ -113,21 +113,44 @@ app.add_middleware(
 def read_root():
     return {"message": "Hello World"}
 
+def join_onnx_parts(part0_path, part1_path, part2_path, model_url):
+    if running_in_docker:
+        output_path = '../models/'+model_url
+    else:
+        output_path = os.getenv('MODELS_PATH') + model_url
+    
+    with open(output_path, 'wb') as output_file:
+        for part_path in [part0_path, part1_path, part2_path]:
+            with open(part_path, 'rb') as part_file:
+                output_file.write(part_file.read())
 
 # Rutas de los modelos ONNX
 if running_in_docker:
     scaler_model_path = '../models/standard_scaler_model.onnx'
     decision_tree_model_path = '../models/best_decision_tree_model.onnx'
-    random_forest_model_default_path = '../models/best_random_forest_model_default.onnx'
+    part0_path = '../models/best_random_forest_model_default.onnx.part0'
+    part1_path = '../models/best_random_forest_model_default.onnx.part1'
+    part2_path = '../models/best_random_forest_model_default.onnx.part2'
 else:
     scaler_model_path = os.getenv('MODELS_PATH') + 'standard_scaler_model.onnx'
     decision_tree_model_path = os.getenv('MODELS_PATH') + 'best_decision_tree_model.onnx'
-    random_forest_model_default_path = os.getenv('MODELS_PATH') + 'best_random_forest_model_default.onnx'
+    part0_path = os.getenv('MODELS_PATH') + 'best_random_forest_model_default.onnx.part0'
+    part1_path = os.getenv('MODELS_PATH') + 'best_random_forest_model_default.onnx.part1'
+    part2_path = os.getenv('MODELS_PATH') + 'best_random_forest_model_default.onnx.part2'
+
+
+join_onnx_parts(part0_path, part1_path, part2_path, 'best_random_forest_model_default.onnx')
 
 # Crear sesiones de inferencia para ambos modelos
 scaler_session = ort.InferenceSession(scaler_model_path)
 decision_tree_session = ort.InferenceSession(decision_tree_model_path)
-random_forest_default_session = ort.InferenceSession(random_forest_model_default_path) #modelo RF por default
+
+if running_in_docker:
+    output_best_rf_path = '../models/best_random_forest_model_default.onnx' 
+else:
+    output_best_rf_path = os.getenv('MODELS_PATH') + 'best_random_forest_model_default.onnx'
+    
+random_forest_default_session = ort.InferenceSession(output_best_rf_path) #modelo RF por default
 
 @app.post("/predict/{model_type}")
 async def predict(data: RainPrediction, model_type: str = "decision_tree"):
