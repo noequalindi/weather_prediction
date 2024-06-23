@@ -1,6 +1,6 @@
 // PredictionForm.js
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import CircularProgress from '@mui/material/CircularProgress';
 import {
@@ -37,6 +37,33 @@ const PredictionForm = () => {
   const [error, setError] = useState(false); // Estado para manejar errores
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [modelAvailable, setModelAvailable] = useState(true); // Estado para verificar disponibilidad del modelo
+
+
+  const checkModelStatus = async () => {
+    try {
+      const response = await axios.get(`${baseURL}/check_model_status/best_random_forest_model.onnx`); // por ahora contemplamos unicamente random forest
+      console.log(response.data); // Aquí puedes manejar la respuesta según necesites
+      if (response.data.model_from_minio) {
+        setModelAvailable(true); // Actualiza el estado del modelo disponible si está disponible
+      } else {
+        // Si el modelo no está disponible, vuelve a verificar después de 10 segundos
+        setTimeout(checkModelStatus, 10000); // 10 segundos
+      }
+    } catch (error) {
+      console.error("Error checking model status:", error);
+      setModelAvailable(false); // Si hay error, considera el modelo no disponible
+      // Intenta verificar nuevamente después de 10 segundos en caso de error
+      setTimeout(checkModelStatus, 5000); // 5 segundos
+    }
+  };
+  useEffect(() => {
+    // Inicia la verificación del estado del modelo al cargar el componente
+    checkModelStatus();
+  
+    // Limpia el intervalo cuando el componente se desmonta o cuando cambia el modelo seleccionado
+    return () => clearTimeout(checkModelStatus);
+  }, []); // Se ejecuta nuevamente si cambia el modelo seleccionado
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -250,6 +277,9 @@ const PredictionForm = () => {
       loading ? <CircularProgress color="inherit" className="loader" /> :
       !loading && prediction && <PredictionResult prediction={prediction} error={error} />
     )}
+     { modelAvailable && selectedModel === 'random_forest' && (
+       <Typography sx={{ fontFamily: 'Poppins', fontSize: '1.2rem' }}>Info: Ahora se está utilizando el modelo {selectedModel} entrenado en background!</Typography>
+      )}
     </div>
   );
 };

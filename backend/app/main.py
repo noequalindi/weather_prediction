@@ -75,10 +75,6 @@ def load_onnx_model_from_minio(model_filename, dag_id):
     s3_key = f"models/{model_filename}"
 
     try:
-        # # Esperar hasta que el DAG haya finalizado con éxito
-        # if not check_airflow_dag_status(dag_id):
-        #     raise HTTPException(status_code=500, detail=f"DAG {dag_id} no se completó exitosamente.")
-
         response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
 
         model_bytes = response['Body'].read()
@@ -122,23 +118,27 @@ def read_root():
 if running_in_docker:
     scaler_model_path = '../models/standard_scaler_model.onnx'
     decision_tree_model_path = '../models/best_decision_tree_model.onnx'
+    random_forest_model_default_path = '../models/best_random_forest_model_default.onnx'
 else:
     scaler_model_path = os.getenv('MODELS_PATH') + 'standard_scaler_model.onnx'
     decision_tree_model_path = os.getenv('MODELS_PATH') + 'best_decision_tree_model.onnx'
+    random_forest_model_default_path = os.getenv('MODELS_PATH') + 'best_random_forest_model_default.onnx'
 
 # Crear sesiones de inferencia para ambos modelos
 scaler_session = ort.InferenceSession(scaler_model_path)
 decision_tree_session = ort.InferenceSession(decision_tree_model_path)
+random_forest_default_session = ort.InferenceSession(random_forest_model_default_path) #modelo RF por default
 
 @app.post("/predict/{model_type}")
 async def predict(data: RainPrediction, model_type: str = "decision_tree"):
-    if scaler_session is None or decision_tree_session is None : # or random_forest_session is None
+    # Check if scaler or decision tree sessions are not loaded
+    if scaler_session is None or decision_tree_session is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
     
     features = np.array([[data.MinTemp, data.Rainfall, data.WindSpeed9am, data.Humidity3pm, data.RainToday]], dtype=np.float32)
 
     if model_type == "decision_tree":
-        # Inferencia con el modelo de DecisionTreeClassifier
+        # Inference with DecisionTreeClassifier model
         if scaler_session is None:
             raise HTTPException(status_code=500, detail="Scaler model not loaded")
 
@@ -153,13 +153,29 @@ async def predict(data: RainPrediction, model_type: str = "decision_tree"):
         prediction = decision_tree_session.run([decision_tree_output_name], decision_tree_inputs)[0]
 
     elif model_type == "random_forest":
-        random_forest_model = load_onnx_model_from_minio('best_random_forest_model.onnx', 'train_random_forest_to_minio')
-        random_forest_session = ort.InferenceSession(random_forest_model)
-        # Inferencia con el modelo de RandomForestClassifier
-        input_name = random_forest_session.get_inputs()[0].name
-        output_name = random_forest_session.get_outputs()[0].name
-        inputs = {input_name: features}
-        prediction = random_forest_session.run([output_name], inputs)[0]
+        try:
+            model_filename = 'best_random_forest_model.onnx'
+            s3_key = f"models/{model_filename}"
+            s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
+
+            # Si el modelo está disponible, lo carga
+            model_bytes = load_onnx_model_from_minio(model_filename, 'train_random_forest_to_minio')
+            random_forest_session = ort.InferenceSession(model_bytes)
+
+            input_name = random_forest_session.get_inputs()[0].name
+            output_name = random_forest_session.get_outputs()[0].name
+            inputs = {input_name: features}
+            prediction = random_forest_session.run([output_name], inputs)[0]
+
+        except ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                # Si el modelo aún no está disponible en S3, usa el modelo por defecto
+                input_name = random_forest_default_session.get_inputs()[0].name
+                output_name = random_forest_default_session.get_outputs()[0].name
+                inputs = {input_name: features}
+                prediction = random_forest_default_session.run([output_name], inputs)[0]
+            else:
+                raise HTTPException(status_code=500, detail=f"Error checking model status: {str(e)}")
 
     else:
         raise HTTPException(status_code=400, detail="Invalid model type")
@@ -183,7 +199,6 @@ async def check_dag_status(dag_id: str):
         if not dag_result:
             raise HTTPException(status_code=404, detail=f"DAG with id '{dag_id}' not found")
 
-        # Verificar existencia de ejecuciones del DAG
         dag_run_query = (
             select(dag_run_table)
             .where(dag_run_table.c.dag_id == dag_id)
@@ -191,6 +206,7 @@ async def check_dag_status(dag_id: str):
             .limit(1)
         )
         dag_run_result = session.execute(dag_run_query).first()
+
         if not dag_run_result:
             raise HTTPException(status_code=404, detail=f"No runs found for DAG with id '{dag_id}'")
 
@@ -209,21 +225,25 @@ async def check_dag_status(dag_id: str):
         if not inspector.has_table("weather_data"):
             raise HTTPException(status_code=404, detail="Table 'weather_data' not found in the database.")
 
-        # Verificar si el modelo está disponible en S3
-        model_filename = "best_random_forest_model.onnx"
-        s3_key = f"models/{model_filename}"
-        try:
-            s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
-        except ClientError as e:
-            if e.response['Error']['Code'] == '404':
-                raise HTTPException(status_code=404, detail=f"Model '{model_filename}' is not available in S3 yet. DAG '{dag_id}' has not run or has not completed successfully.")
-            else:
-                raise
-
-        return {"dag_id": dag_id, "last_run": run, "model_available": True}
+        return {"dag_id": dag_id, "last_run": run }
 
     finally:
         session.close()
+
+@app.get('/check_model_status/{model_filename}')
+async def check_model_status(model_filename: str): 
+    # Verificar si el modelo está disponible en S3
+    s3_key = f"models/{model_filename}"
+    try:
+        s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
+        model_from_minio = True
+    except ClientError as e:
+        if e.response['Error']['Code'] == '404':
+            raise HTTPException(status_code=404, detail=f"Model '{model_filename}' is not available in S3 yet.")
+        else:
+            raise HTTPException(status_code=500, detail=f"Error checking model status: {str(e)}")
+    
+    return {"message": f"Model '{model_filename}' is available in S3.", "model_from_minio": model_from_minio }
 
    
 ######### OBTENER METRICAS ##########

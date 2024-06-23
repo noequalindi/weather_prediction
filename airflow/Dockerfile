@@ -14,7 +14,11 @@ RUN apt-get update && \
     && apt-get autoremove -yqq --purge \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+# # Copiamos el archivo init_airflow.sh al contenedor
+# COPY init_airflow.sh /init_airflow.sh
 
+# # Cambiamos los permisos del script init_airflow.sh
+# RUN chmod +x /init_airflow.sh
 # Cambiamos de vuelta al usuario airflow para instalar los paquetes Python
 USER airflow
 
@@ -24,3 +28,7 @@ COPY requirements.txt /requirements.txt
 # Actualizamos pip y luego instalamos las dependencias
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r /requirements.txt
+
+# # Configuramos el punto de entrada para ejecutar el script de inicialización
+# ENTRYPOINT ["/init_airflow.sh"]
+
