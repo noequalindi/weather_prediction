@@ -6,7 +6,8 @@ Ejecutar `docker-compose up --build` para crear el contenedor y las imágenes.
  - En `localhost:3000` se encuentra el front-end desde donde se interactúa con la APP.
  - En `localhost:8080` Airflow - donde se puede ingresar a ver los DAG's. User: airflow, pass: airflow 
  - En `localhost:9000` se encuentra minio S3
- - En `localhost:8000` se encuentra el backend y la API. 
+ - En `localhost:8000` se encuentra el backend y la API.
+ - Mediante el puerto 5432, user y pass, se puede conectar a la BD Postgres
 
 *NOTA IMPORTANTE:* La ejecución de los DAGs y el entrenamiento del modelo en background tardan un poco, por lo cual se grabaron videos para mostrar como funcionan realmente. Al iniciar la APP solo van a poder predecir con los modelos ya preentrenados y cargados. (Si esperan lo suficiente ya sería posible ver la creación de los DAGs etc ingresando a airflow, como así el modelo guardado luego de ser entrenado en minio)
 
