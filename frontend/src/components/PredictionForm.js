@@ -83,6 +83,7 @@ const PredictionForm = () => {
     });
     setErrorMessage(''); // Limpiar el mensaje de error
     setPrediction(null); // Limpiar el resultado de la predicción
+    setSelectedModel(null)
     setError(false); // Reiniciar el estado de error
   };
 

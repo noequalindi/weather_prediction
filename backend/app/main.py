@@ -39,16 +39,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 metadata = MetaData()
 
-rf_metrics = Table(
-    'rf_metrics', metadata,
-    autoload_with=engine
-)
-
-weather_data = Table(
-    'weather_data', metadata,
-    autoload_with=engine
-)
-
 
 def get_db():
     db = SessionLocal()
@@ -209,12 +199,12 @@ async def predict(data: RainPrediction, model_type: str = "decision_tree"):
 
 
 
-dag_table = Table('dag', metadata, autoload_with=engine)
-dag_run_table = Table('dag_run', metadata, autoload_with=engine)
 
 @app.get("/check_dag_status/{dag_id}")
 async def check_dag_status(dag_id: str):
     session = SessionLocal()
+    dag_table = Table('dag', metadata, autoload_with=engine)
+    dag_run_table = Table('dag_run', metadata, autoload_with=engine)
     try:
         # Verificar existencia de DAG
         dag_query = select(dag_table).where(dag_table.c.dag_id == dag_id)
@@ -274,6 +264,10 @@ async def check_model_status(model_filename: str):
 @app.get("/metrics")
 async def get_metrics(db: Session = Depends(get_db)):
     try:
+        rf_metrics = Table(
+        'rf_metrics', metadata,
+        autoload_with=engine
+        )
         # fetch the latest metrics entry
         stmt = select(
             rf_metrics.c.accuracy_train,
@@ -329,6 +323,11 @@ async def get_metrics(db: Session = Depends(get_db)):
 @app.get("/year-most-rain")
 async def get_year_most_rain(db: Session = Depends(get_db)):
     try:
+        weather_data = Table(
+            'weather_data', metadata,
+            autoload_with=engine
+        )
+
         # Obtener el año con más lluvia
         stmt = (
             select(
@@ -357,6 +356,11 @@ async def get_year_most_rain(db: Session = Depends(get_db)):
 @app.get("/season-most-rain")
 async def get_season_most_rain(db: Session = Depends(get_db)):
     try:
+        weather_data = Table(
+        'weather_data', metadata,
+        autoload_with=engine
+        )
+
         # Obtener la estación del año donde más llovió
         stmt = select(
             weather_data.c.Season,
@@ -395,6 +399,11 @@ async def get_season_most_rain(db: Session = Depends(get_db)):
 @app.get("/city-most-rain")
 async def get_city_most_rain(db: Session = Depends(get_db)):
     try:
+        weather_data = Table(
+            'weather_data', metadata,
+            autoload_with=engine
+        )
+
         # Obtener la ciudad donde más llovió
         stmt = select(
             weather_data.c.Location,
@@ -432,6 +441,11 @@ async def get_city_most_rain(db: Session = Depends(get_db)):
 @app.get("/average-rainfall-last-5-years")
 async def get_average_rainfall_last_5_years(db: Session = Depends(get_db)):
     try:
+        weather_data = Table(
+            'weather_data', metadata,
+            autoload_with=engine
+        )
+
         # Obtener el promedio de lluvia por año para los últimos 5 años
         last_year_query = select(func.max(weather_data.c.Year))
         last_year = db.execute(last_year_query).scalar()
@@ -469,6 +483,11 @@ async def get_average_rainfall_last_5_years(db: Session = Depends(get_db)):
 @app.get("/trainings-by-date")
 async def get_trainings_by_date(db: Session = Depends(get_db)):
     try:
+        rf_metrics = Table(
+            'weather_data', metadata,
+            autoload_with=engine
+        )
+
         # Obtener todos los entrenamientos agrupados por fecha
         stmt = (
             select(
