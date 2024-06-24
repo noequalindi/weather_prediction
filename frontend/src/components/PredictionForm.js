@@ -40,31 +40,6 @@ const PredictionForm = () => {
   const [modelAvailable, setModelAvailable] = useState(true); // Estado para verificar disponibilidad del modelo
 
 
-  const checkModelStatus = async () => {
-    try {
-      const response = await axios.get(`${baseURL}/check_model_status/best_random_forest_model.onnx`); // por ahora contemplamos unicamente random forest
-      console.log(response.data); // Aquí puedes manejar la respuesta según necesites
-      if (response.data.model_from_minio) {
-        setModelAvailable(response.data.model_from_minio); // Actualiza el estado del modelo disponible si está disponible
-      } else {
-        // Si el modelo no está disponible, vuelve a verificar después de 10 segundos
-        setTimeout(checkModelStatus, 10000); // 10 segundos
-      }
-    } catch (error) {
-      console.error("Error checking model status:", error);
-      setModelAvailable(false); // Si hay error, considera el modelo no disponible
-      // Intenta verificar nuevamente después de 10 segundos en caso de error
-      setTimeout(checkModelStatus, 5000); // 5 segundos
-    }
-  };
-  useEffect(() => {
-    // Inicia la verificación del estado del modelo al cargar el componente
-    checkModelStatus();
-  
-    // Limpia el intervalo cuando el componente se desmonta o cuando cambia el modelo seleccionado
-    return () => clearTimeout(checkModelStatus);
-  }, []); // Se ejecuta nuevamente si cambia el modelo seleccionado
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFeatures({
@@ -128,20 +103,14 @@ const PredictionForm = () => {
         timeout: 5000
       });
       setPrediction(response.data.prediction);
+      setModelAvailable(response.data.load_rf_from_minio)
       setError(false); // Reiniciar el estado de error si la solicitud fue exitosa
     } catch (error) {
       console.error("There was an error making the request:", error);
       if (error.response) {
         // El servidor devolvió un código de estado diferente de 2xx
         setErrorMessage(error.response.data.detail);
-      } else if (error.request) {
-        // La solicitud fue hecha pero no se recibió respuesta
-        setErrorMessage("No se recibió respuesta del servidor.");
-      } else {
-        // Ocurrió un error antes de realizar la solicitud
-        setErrorMessage(error.message);
       }
-      setError(true); // Establecer estado de error en true si ocurre un error
     } finally {
       setTimeout(() => setLoading(false), 2000); // Detener el loader después de 2 segundos
     }

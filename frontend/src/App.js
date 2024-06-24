@@ -21,7 +21,7 @@ function App() {
         const response = await axios.get(`${API_URL}/check_dag_status/${DAG_ID}`);
         if (response.status === 200) {
           const lastRun = response.data.last_run;
-          if (lastRun && lastRun.state === 'success') {
+          if (lastRun ) {
             setDagLoaded(true);
             fetchMetrics();
           } else {
