@@ -50,7 +50,7 @@ def get_db():
 
 MINIO_BUCKET = 'weather-prediction-s3'
 MINIO_MODELS_PREFIX = 'models/'
-MINIO_ENDPOINT_URL = 'http://localhost:9000'
+MINIO_ENDPOINT_URL = 'http://s3:9000'
 
 s3_client = boto3.client(
     's3',

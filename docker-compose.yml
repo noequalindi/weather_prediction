@@ -240,7 +240,8 @@ services:
       - airflow-webserver
       - airflow-scheduler
       - postgres
-      - s3
+      - create_s3_buckets
+
 
   # Service for frontend
   weather_prediction_front:
