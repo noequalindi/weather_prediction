@@ -16,9 +16,10 @@ Ejecutar `docker-compose up --build` para crear el contenedor y las imágenes.
 
 NOTA: Levantar el front y el back solo si se tienen instaladas las dependencias correspondientes, tanto para python como para react (node)
 
-- Para ejecutar localmente el back y el front, stoppear el contenedor de weather_prediction_dlops (backend) e iniciarlo localmente moviendose a la capreta backend `cd backend` y ejecutando el comando `uvicorn  app.main:app --reload` 
-Para levantar el front moverse a la carpeta frontend `cd frontend` y ejecutar `npm start`
-Para ejecutar manualmente los DAGS, ejecutar `create_and_load_tables_postgres_train_model`. El DAG `train_random_forest_to_minio` (`train_model_dag.py`)en verdad debería ser el que entrenase, pero por problemas con la libreria que toma las tasks externas para que dependa de otra tarea de otro dag, no logramos que funcione un 100%, por momentos andaba y por otros no, por lo que incluimos todo el funcionamiento en un mismo DAG. 
+- Para ejecutar localmente el back y el front, stoppear ammbos contenedores `weather_prediction_dlops (backend)` y `weather_prediction_front`. 
+- Ejecutarlo localmente el back moviendose a la carpeta backend `cd backend`, ejecutando el comando `uvicorn  app.main:app --reload`. 
+- Para levantar el front moverse a la carpeta frontend `cd frontend` y ejecutar `npm start`.
+- Para ejecutar manualmente los DAGS, ejecutar `create_and_load_tables_postgres_train_model`. El DAG `train_random_forest_to_minio` (`train_model_dag.py`) en verdad debería ser el que entrenase, pero por problemas con la libreria que toma las tasks externas para que dependa de otra tarea de otro dag, no logramos que funcione un 100%, por momentos andaba y por otros no, por lo que incluimos todo el funcionamiento en un mismo DAG. 
 
 - Non-issues: 
     - Pueden existir errores en el backend que indiquen que se está intentando acceder al modelo `best_random_forest_model.onnx` que todavía no está guardado en el bucket, la API checkea que esté el modelo para poder ser usado sino utiliza el default. Luego, también se checkea que las tablas `rf_metrics` y `weather_data` estén creadas para poder mostrar las métricas, con lo cual si todavía no hay data (post modelo entrenado mediante el DAG), no se mostrarán tampoco las métricas en el frontend. 
