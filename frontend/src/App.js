@@ -14,19 +14,18 @@ function App() {
   const [loading, setLoading] = useState(true); 
   const [loadingMessage, setLoadingMessage] = useState("Se está entrenando el modelo en background...");
   const [dagLoaded, setDagLoaded] = useState(false); 
-
+  const [loadingMetrics, setLoadingMetrics] = useState("")
   useEffect(() => {
     const checkDagStatus = async () => {
       try {
         const response = await axios.get(`${API_URL}/check_dag_status/${DAG_ID}`);
-        if (response.status === 200) {
+        if (rSesponse.status === 200) {
           const lastRun = response.data.last_run;
           if (lastRun && lastRun === "success" ) {
             setDagLoaded(true);
           } else {
             setTimeout(checkDagStatus, 5000);
           }
-          fetchMetrics();
         }
       } catch (error) {
         if (error.response && error.response.status === 404) {
@@ -47,11 +46,13 @@ function App() {
       } catch (error) {
         console.error('Error al obtener métricas:', error);
         setLoading(false); // Manejar errores y ocultar el loader
+        setLoadingMetrics("Se están cargando las métricas...")
         setTimeout(fetchMetrics, 5000); // Volver a intentar después de 5 segundos para cualquier error
       }
     };
 
     checkDagStatus();
+    fetchMetrics();
   }, []); 
 
   return (
