@@ -24,3 +24,6 @@ Para ejecutar manualmente los DAGS, primero ejecutar `create_and_load_tables_pos
     - Por alguna razón la cuál no hubo tiempo de indagar, el último día de entrega empezo a fallar la inicialización de airflow y por lo tanto la creación de los DAGs ni bien inicia la APP, aún habiendo configurado las variables de entorno para que esto suceda de esta forma. Extrañamente después de unos largos minutos comenzó a funcionar, y a correr correctamente. 
     - Debido a este problema, y los problemas en gran parte de asincronicidad, se tuvo que dejar comentada la parte en que se toma el modelo desde el bucket de minio en el endpoint `/predict/{model_type}` (para el modelo random_forest), ya que al no encontrarlo (porque todavía se está entrenando), el backend quedaba arrojando excepciones y no continuaba su flujo, aún catcheando el error y las excepciones. Se dejó un modelo de RF por default de los que se entrenó previamente en el DAG. 
     - El modelo entrenado y convertido a onnx en el dag, es el que se está utilizando pero de manera particionada, ya que es bastante pesado y github no permitía la subida de archivos de más de 100mb. 
+
+Videos de la aplicación funcional antes de obtener errores: 
+https://drive.google.com/drive/folders/1qu9oYJd9KZX4n8--qyJf95fVBEv7DUE_?usp=drive_link 
