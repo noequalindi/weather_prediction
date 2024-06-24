@@ -30,10 +30,10 @@ function App() {
         }
       } catch (error) {
         if (error.response && error.response.status === 404) {
-          setLoadingMessage('El modelo se está cargando, espere unos segundos...');
+          setLoadingMessage('El modelo se está entrenando y cargando, espere unos segundos...');
         } else {
           console.error('Error al verificar el estado del DAG:', error);
-          setLoadingMessage('Error al verificar el estado del DAG.');
+          setLoadingMessage('El modelo se está entrenando y cargando, espere unos segundos...');
         }
         setTimeout(checkDagStatus, 5000); // Volver a intentar después de 5 segundos para cualquier error
       }

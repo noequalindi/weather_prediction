@@ -168,10 +168,8 @@ async def predict(data: RainPrediction, model_type: str = "decision_tree"):
     elif model_type == "random_forest":
         try:
             model_filename = 'best_random_forest_model.onnx'
-            s3_key = f"models/{model_filename}"
-            s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
-
-            # Si el modelo está disponible, lo carga
+            
+            # If the model is available, load it
             model_bytes = load_onnx_model_from_minio(model_filename, 'train_random_forest_to_minio')
             random_forest_session = ort.InferenceSession(model_bytes)
 
@@ -181,23 +179,29 @@ async def predict(data: RainPrediction, model_type: str = "decision_tree"):
             prediction = random_forest_session.run([output_name], inputs)[0]
 
         except ClientError as e:
-            if e.response['Error']['Code'] == '404':
-                # Si el modelo aún no está disponible en S3, usa el modelo por defecto
+            # If the model is not available in S3, use the default model
+            if e.response['Error']['Code'] == '404' or e.response['Error']['Code'] == '500':
                 input_name = random_forest_default_session.get_inputs()[0].name
                 output_name = random_forest_default_session.get_outputs()[0].name
                 inputs = {input_name: features}
                 prediction = random_forest_default_session.run([output_name], inputs)[0]
-            else:
-                raise HTTPException(status_code=500, detail=f"Error checking model status: {str(e)}")
-
+            # else:
+            #     # Handle other ClientErrors (optional)
+            #     raise HTTPException(status_code=500, detail=f"Error checking model status: {str(e)}")
+        
+        # Handle other exceptions (optional)
+        except Exception as ex:
+            # Fallback to default model
+            input_name = random_forest_default_session.get_inputs()[0].name
+            output_name = random_forest_default_session.get_outputs()[0].name
+            inputs = {input_name: features}
+            prediction = random_forest_default_session.run([output_name], inputs)[0]
     else:
         raise HTTPException(status_code=400, detail="Invalid model type")
 
     result = "Yes" if prediction[0] == 1 else "No"
     
     return {"prediction": result}
-
-
 
 
 @app.get("/check_dag_status/{dag_id}")
@@ -251,12 +255,12 @@ async def check_model_status(model_filename: str):
         s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
         model_from_minio = True
     except ClientError as e:
-        if e.response['Error']['Code'] == '404':
-            raise HTTPException(status_code=404, detail=f"Model '{model_filename}' is not available in S3 yet.")
-        else:
-            raise HTTPException(status_code=500, detail=f"Error checking model status: {str(e)}")
+        if e.response['Error']['Code'] == '404' or e.response['Error']['Code'] == '500':
+            model_from_minio = False
+            #raise HTTPException(status_code=404, detail=f"Model '{model_filename}' is not available in S3 yet.")
+            #raise HTTPException(status_code=500, detail=f"Error checking model status: {str(e)}")
     
-    return {"message": f"Model '{model_filename}' is available in S3.", "model_from_minio": model_from_minio }
+    return {"message": f"Model '{model_filename}'", "model_from_minio": model_from_minio }
 
    
 ######### OBTENER METRICAS ##########

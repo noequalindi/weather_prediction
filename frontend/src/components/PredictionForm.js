@@ -45,7 +45,7 @@ const PredictionForm = () => {
       const response = await axios.get(`${baseURL}/check_model_status/best_random_forest_model.onnx`); // por ahora contemplamos unicamente random forest
       console.log(response.data); // Aquí puedes manejar la respuesta según necesites
       if (response.data.model_from_minio) {
-        setModelAvailable(true); // Actualiza el estado del modelo disponible si está disponible
+        setModelAvailable(response.data.model_from_minio); // Actualiza el estado del modelo disponible si está disponible
       } else {
         // Si el modelo no está disponible, vuelve a verificar después de 10 segundos
         setTimeout(checkModelStatus, 10000); // 10 segundos

@@ -173,7 +173,7 @@ def train_random_forest():
 # Definir el DAG
 dag = DAG(
     'train_random_forest_to_minio',
-    schedule_interval=timedelta(hours=3),  # Ejecutar cada 3 horas
+    schedule_interval=timedelta(minutes=30),  # Ejecutar cada 3 horas
     start_date=datetime(2024, 6, 22),  # Iniciar inmediatamente al iniciar la app
     description='Entrenar modelo Random Forest y guardar en MinIO',
     catchup=False
