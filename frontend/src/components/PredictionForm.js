@@ -37,7 +37,7 @@ const PredictionForm = () => {
   const [error, setError] = useState(false); // Estado para manejar errores
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [modelAvailable, setModelAvailable] = useState(true); // Estado para verificar disponibilidad del modelo
+  const [modelAvailable, setModelAvailable] = useState(false); // Estado para verificar disponibilidad del modelo
 
 
   const handleChange = (e) => {
@@ -58,6 +58,7 @@ const PredictionForm = () => {
     });
     setErrorMessage(''); // Limpiar el mensaje de error
     setPrediction(null); // Limpiar el resultado de la predicción
+    setModelAvailable(false)
     setSelectedModel(null)
     setError(false); // Reiniciar el estado de error
   };
