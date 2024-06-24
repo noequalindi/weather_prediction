@@ -7,7 +7,7 @@ import Loader from './components/Loader'; // Importar el componente Loader
 import axios from 'axios';
 
 const API_URL = 'http://localhost:8000';
-const DAG_ID = 'train_random_forest_to_minio'; 
+const DAG_ID = 'create_and_load_tables_postgres_train_model'; 
 
 function App() {
   const [metrics, setMetrics] = useState(null);
@@ -21,12 +21,12 @@ function App() {
         const response = await axios.get(`${API_URL}/check_dag_status/${DAG_ID}`);
         if (response.status === 200) {
           const lastRun = response.data.last_run;
-          if (lastRun ) {
+          if (lastRun && lastRun === "success" ) {
             setDagLoaded(true);
-            fetchMetrics();
           } else {
             setTimeout(checkDagStatus, 5000);
           }
+          fetchMetrics();
         }
       } catch (error) {
         if (error.response && error.response.status === 404) {
@@ -47,6 +47,7 @@ function App() {
       } catch (error) {
         console.error('Error al obtener métricas:', error);
         setLoading(false); // Manejar errores y ocultar el loader
+        setTimeout(fetchMetrics, 5000); // Volver a intentar después de 5 segundos para cualquier error
       }
     };
 
