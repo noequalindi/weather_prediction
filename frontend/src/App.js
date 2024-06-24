@@ -23,6 +23,7 @@ function App() {
           const lastRun = response.data.last_run;
           if (lastRun && lastRun === "success" ) {
             setDagLoaded(true);
+            setLoading(false);
           } else {
             setTimeout(checkDagStatus, 5000);
           }
@@ -42,6 +43,7 @@ function App() {
       try {
         const response = await axios.get(`${API_URL}/metrics`);
         setMetrics(response.data);
+        setDagLoaded(true)
         setLoading(false); // Al recibir la respuesta, se oculta el loader
       } catch (error) {
         console.error('Error al obtener métricas:', error);

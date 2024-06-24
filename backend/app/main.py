@@ -167,34 +167,43 @@ async def predict(data: RainPrediction, model_type: str = "decision_tree"):
         prediction = decision_tree_session.run([decision_tree_output_name], decision_tree_inputs)[0]
 
     elif model_type == "random_forest":
-        try:
-            # Load the model from MinIO
-            model_filename = 'best_random_forest_model.onnx'
-            model_bytes = load_onnx_model_from_minio(model_filename, 'train_random_forest_to_minio')
-            random_forest_session = ort.InferenceSession(model_bytes)
-
-            input_name = random_forest_session.get_inputs()[0].name
-            output_name = random_forest_session.get_outputs()[0].name
-            inputs = {input_name: features}
-            prediction = random_forest_session.run([output_name], inputs)[0]
-            load_rf_from_minio = True
-        except ClientError as e:
-            if e.response['Error']['Code'] in ['404', '500']:
-                # Fallback to default model
-                input_name = random_forest_default_session.get_inputs()[0].name
-                output_name = random_forest_default_session.get_outputs()[0].name
-                inputs = {input_name: features}
-                prediction = random_forest_default_session.run([output_name], inputs)[0]
-                load_rf_from_minio = False
-            else:
-                raise HTTPException(status_code=500, detail=f"Error checking model status: {str(e)}")
-        except Exception as ex:
-            # Fallback to default model
+        # Fallback to default model
             input_name = random_forest_default_session.get_inputs()[0].name
             output_name = random_forest_default_session.get_outputs()[0].name
             inputs = {input_name: features}
             prediction = random_forest_default_session.run([output_name], inputs)[0]
             load_rf_from_minio = False
+        # try:
+        #     # Load the model from MinIO
+        #     model_filename = 'best_random_forest_model.onnx'
+        #     s3_key = f"models/{model_filename}"
+        #     response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
+
+        #     model_bytes = response['Body'].read()
+        #     random_forest_session = ort.InferenceSession(model_bytes)
+
+        #     input_name = random_forest_session.get_inputs()[0].name
+        #     output_name = random_forest_session.get_outputs()[0].name
+        #     inputs = {input_name: features}
+        #     prediction = random_forest_session.run([output_name], inputs)[0]
+        #     load_rf_from_minio = True
+        # except ClientError as e:
+        #     if e.response['Error']['Code'] in ['404', '500']:
+        #         # Fallback to default model
+        #         input_name = random_forest_default_session.get_inputs()[0].name
+        #         output_name = random_forest_default_session.get_outputs()[0].name
+        #         inputs = {input_name: features}
+        #         prediction = random_forest_default_session.run([output_name], inputs)[0]
+        #         load_rf_from_minio = False
+        #     else:
+        #         raise HTTPException(status_code=500, detail=f"Error checking model status: {str(e)}")
+        # except Exception as ex:
+        #     # Fallback to default model
+        #     input_name = random_forest_default_session.get_inputs()[0].name
+        #     output_name = random_forest_default_session.get_outputs()[0].name
+        #     inputs = {input_name: features}
+        #     prediction = random_forest_default_session.run([output_name], inputs)[0]
+        #     load_rf_from_minio = False
     else:
         raise HTTPException(status_code=400, detail="Invalid model type")
 
@@ -472,7 +481,7 @@ async def get_average_rainfall_last_5_years(db: Session = Depends(get_db)):
 async def get_trainings_by_date(db: Session = Depends(get_db)):
     try:
         rf_metrics = Table(
-            'weather_data', metadata,
+            'rf_metrics', metadata,
             autoload_with=engine
         )
 
