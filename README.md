@@ -1,13 +1,14 @@
 # weather_prediction
 Ejecutar `docker-compose up --build` para crear el contenedor y las imágenes.
-*nota: esperar a que todos las imágenes estén levantadas correctamente antes de iniciar el front. 
+
+*nota:* esperar a que todos las imágenes estén levantadas correctamente antes de iniciar el front. 
 
 En `localhost:3000` se encuentra el front-end desde donde se interactúa con la APP.
 En `localhost:8080` Airflow - donde se puede ingresar a ver los DAG's. User: airflow, pass: airflow 
 En `localhost:9000` se encuentra minio S3
 En `localhost:8000` se encuentra el backend y la API. 
 
-NOTA IMPORTANTE: La ejecución de los DAGs y el entrenamiento del modelo en background tardan un poco, por lo cual se grabaron videos para mostrar como funcionan realmente. Al iniciar la APP solo van a poder predecir con los modelos ya preentrenados y cargados. (Si esperan lo suficiente ya sería posible ver la creación de los DAGs etc ingresando a airflow, como así el modelo guardado luego de ser entrenado en minio)
+*NOTA IMPORTANTE:* La ejecución de los DAGs y el entrenamiento del modelo en background tardan un poco, por lo cual se grabaron videos para mostrar como funcionan realmente. Al iniciar la APP solo van a poder predecir con los modelos ya preentrenados y cargados. (Si esperan lo suficiente ya sería posible ver la creación de los DAGs etc ingresando a airflow, como así el modelo guardado luego de ser entrenado en minio)
 
 - Se trabajó con versionados en DVC y Firebase como storage, con posibilidad de usarlo de hosting. Esto fue porque se iba a subir a producción, pero nos topamos con muchos problemas de configuración inclusive con GCP donde queríamos correr las imágenes, en teoría éste resuelve los protocolos "fácilmente", como Heroku, pero todos pedían medios de pago. 
 - La idea de disponibilizarlo era para que no tengan que esperar los entrenamientos y que ya tengan todo cargado en la base de datos.
